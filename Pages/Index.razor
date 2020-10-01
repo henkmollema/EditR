@@ -64,8 +64,7 @@
             {
                 new File
                 {
-                    Name = "test",
-                    Content = "Foo Bar Baz",
+                    Name = "file 1"
                 },
             };
         }
@@ -79,17 +78,18 @@
 
     async Task DeleteFile(string fileName)
     {
-        var confirmed = await JS.InvokeAsync<bool>("window.confirm", "Are you sure?");
-        Console.WriteLine("confirmed: " + confirmed);
+        var remove = Files.FirstOrDefault(x => x.Name == fileName);
+        var confirmed = string.IsNullOrEmpty(remove.Content) || await JS.InvokeAsync<bool>("window.confirm", "Are you sure?");
         if (!confirmed)
         {
             return;
         }
 
-        var remove = Files.FirstOrDefault(x => x.Name == fileName);
         if (remove is object)
         {
             Files.Remove(remove);
+            ActiveFile = Files.FirstOrDefault();
+            StateHasChanged();
         }
     }
 
@@ -97,12 +97,30 @@
     {
         var file = new File
         {
-            Name = "file " + (Files.Count + 1),
+            Name = GetNewFileName(),
             Content = "",
         };
         Files.Add(file);
         ActiveFile = file;
-        await JS.InvokeVoidAsync("window.focusElement", "editor");
+
+        try
+        {
+            await JS.InvokeVoidAsync("window.focusElement", "editor");
+        }
+        catch { }
+    }
+
+    string GetNewFileName()
+    {
+        var idx = 1;
+        while (true)
+        {
+            var fileName = "file " + idx++;
+            if (Files.All(x => x.Name != fileName))
+            {
+                return fileName;
+            }
+        }
     }
 
     string ActiveClass(File file) => ActiveFile.Name == file.Name ? "active" : "";
