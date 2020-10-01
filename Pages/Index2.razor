@@ -5,6 +5,6 @@
 @code {
     protected override void OnInitialized()
     {
-        Navigation.NavigateTo("/", forceLoad: true);
+        Navigation.NavigateTo(Navigation.Uri.Replace("index.html", ""), forceLoad: false);
     }
 }
