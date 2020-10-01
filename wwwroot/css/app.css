@@ -42,9 +42,9 @@ a, .btn-link {
     background-color: #4f575f !important;
 }
 
-.editr nav a {
-    color: white;
-}
+    .editr nav a {
+        color: #21262b;
+    }
 .editr nav .nav-tabs {
     border-color: #888;
 }
