@@ -20,7 +20,7 @@
         @if (ActiveFile is object)
         {
             <div class="tab-pane show active h-100">
-                <textarea id="editor" class="editor" @bind="ActiveFile.Content"></textarea>
+                <textarea id="editor" class="editor" @bind="ActiveFile.Content" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
             </div>
         }
     </div>
