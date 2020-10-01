@@ -1,0 +1,109 @@
+﻿@page "/"
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JS
+
+<div class="editr">
+    <nav class="bg-dark">
+        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            @foreach (var file in Files)
+            {
+                <a class="nav-item nav-link @ActiveClass(file)" role="tab" href="#" @onclick="@(() => SelectFile(file.Name))">
+                    @file.Name
+                    <span title="Close" data-toggle="tooltip" @onclick="@(() => DeleteFile(file.Name))">&times;</span>
+                </a>
+            }
+            <a class="nav-item nav-link" role="tab" href="#" @onclick="NewFile">+</a>
+        </div>
+    </nav>
+    <div class="tab-content">
+        @if (ActiveFile is object)
+        {
+            <div class="tab-pane show active h-100">
+                <textarea id="editor" class="editor" @bind="ActiveFile.Content"></textarea>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    class File
+    {
+        public string Name { get; set; }
+
+        public string Content { get; set; }
+    }
+
+    const string FilesKey = "files";
+
+    List<File> Files { get; set; } = new List<File>();
+
+    File ActiveFile { get; set; }
+
+    System.Timers.Timer _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _timer = new System.Timers.Timer(500);
+        _timer.Elapsed += async (s, e) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LocalStorage.SetItemAsync(FilesKey, Files);
+            });
+        };
+        _timer.Start();
+
+        if (await LocalStorage.ContainKeyAsync(FilesKey))
+        {
+            Files = await LocalStorage.GetItemAsync<List<File>>(FilesKey);
+        }
+        else
+        {
+            Files = new List<File>
+            {
+                new File
+                {
+                    Name = "test",
+                    Content = "Foo Bar Baz",
+                },
+            };
+        }
+        ActiveFile = Files.First();
+    }
+
+    void SelectFile(string fileName)
+    {
+        ActiveFile = Files.FirstOrDefault(x => x.Name == fileName);
+    }
+
+    async Task DeleteFile(string fileName)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("window.confirm", "Are you sure?");
+        Console.WriteLine("confirmed: " + confirmed);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var remove = Files.FirstOrDefault(x => x.Name == fileName);
+        if (remove is object)
+        {
+            Files.Remove(remove);
+        }
+    }
+
+    async Task NewFile()
+    {
+        var file = new File
+        {
+            Name = "file " + (Files.Count + 1),
+            Content = "",
+        };
+        Files.Add(file);
+        ActiveFile = file;
+        await JS.InvokeVoidAsync("window.focusElement", "editor");
+    }
+
+    string ActiveClass(File file) => ActiveFile.Name == file.Name ? "active" : "";
+}
